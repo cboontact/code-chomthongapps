@@ -1,65 +1,178 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { faTableList, faCircleCheck, faCircleXmark, faThumbTack } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "sonner";
+
+import Header from "@/components/layout/Header";
+import Sidebar from "@/components/layout/Sidebar";
+import TopNav from "@/components/layout/TopNav";
+import SearchBar from "@/components/ui/SearchBar";
+import StatCard, { StatCardSkeleton } from "@/components/ui/StatCard";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import CardSkeleton from "@/components/ui/CardSkeleton";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import SystemsTable from "@/components/systems/SystemsTable";
+import SystemsCardGrid from "@/components/systems/SystemsCardGrid";
+import SystemModal from "@/components/systems/SystemModal";
+import AdminLoginModal from "@/components/auth/AdminLoginModal";
+import WorkgroupsPage from "@/components/workgroups/WorkgroupsPage";
+import StatsPage from "@/components/stats/StatsPage";
+
+import { useSystems } from "@/hooks/useSystems";
+import { useWorkgroups } from "@/hooks/useWorkgroups";
+import { useAuth } from "@/hooks/useAuth";
+import type { System, ViewMode } from "@/types";
+import type { SystemInput } from "@/lib/validators";
+
+export default function HomePage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState("systems");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingSystem, setEditingSystem] = useState<System | null>(null);
+  const [deletingSystem, setDeletingSystem] = useState<System | null>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  const { isAdmin, adminToken, login, logout } = useAuth();
+  const { systems, total, loading, saving, deleting, filters, updateFilters, clearSearch, createSystem, updateSystem, deleteSystem, togglePin, toggleStatus } = useSystems(adminToken);
+  const { workgroups, refetch: refetchWorkgroups } = useWorkgroups();
+
+  const activeCount = systems.filter((s) => s.status === "active").length;
+  const inactiveCount = systems.filter((s) => s.status === "inactive").length;
+  const pinnedCount = systems.filter((s) => s.is_pinned).length;
+
+  function requireAdmin(action: () => void) {
+    if (!isAdmin) { toast.warning("กรุณาเข้าสู่ระบบ Admin ก่อน"); setLoginModalOpen(true); return; }
+    action();
+  }
+
+  function handleAdd() { requireAdmin(() => { setEditingSystem(null); setModalOpen(true); }); }
+  function handleEdit(system: System) { requireAdmin(() => { setEditingSystem(system); setModalOpen(true); }); }
+  function handleDeleteClick(system: System) { requireAdmin(() => setDeletingSystem(system)); }
+  function handleTogglePin(system: System) { requireAdmin(() => togglePin(system)); }
+  function handleToggleStatus(system: System) { requireAdmin(() => toggleStatus(system)); }
+
+  async function handleSave(data: SystemInput) {
+    const ok = editingSystem ? await updateSystem(editingSystem.id, data) : await createSystem(data);
+    if (ok) setModalOpen(false);
+  }
+
+  async function handleConfirmDelete() {
+    if (!deletingSystem) return;
+    const ok = await deleteSystem(deletingSystem.id);
+    if (ok) setDeletingSystem(null);
+  }
+
+  function handleLogout() {
+    logout();
+    toast.success("ออกจากระบบเรียบร้อย");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen overflow-x-hidden bg-slate-50">
+      <Header
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+        isAdmin={isAdmin}
+        onAdminClick={() => setLoginModalOpen(true)}
+        onLogout={handleLogout}
+      />
+
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        activeMenu={activeMenu}
+        onMenuChange={setActiveMenu}
+        isAdmin={isAdmin}
+      />
+
+      <main className={`${isAdmin ? "lg:ml-56" : ""} pt-14 min-h-screen min-w-0`}>
+        <div className="w-full max-w-screen-2xl min-w-0 overflow-x-hidden p-4 sm:p-5">
+
+          {/* ── Systems Page ── */}
+          {activeMenu === "systems" && (
+            <>
+              <TopNav
+                title="รายการเว็บแอปพลิเคชัน"
+                subtitle="ระบบสารสนเทศทั้งหมดของโรงเรียนจอมทอง"
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                onAddClick={handleAdd}
+                totalCount={total}
+                isAdmin={isAdmin}
+              />
+
+              <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-5 min-w-0">
+                {loading
+                  ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+                  : <>
+                      <StatCard label="ทั้งหมด"    value={total}         icon={faTableList}   color="sky" />
+                      <StatCard label="ใช้งาน"     value={activeCount}   icon={faCircleCheck} color="emerald" />
+                      <StatCard label="ปิดใช้งาน"  value={inactiveCount} icon={faCircleXmark} color="slate" />
+                      <StatCard label="ปักหมุด"    value={pinnedCount}   icon={faThumbTack}   color="cyan" />
+                    </>
+                }
+              </div>
+
+              <SearchBar
+                filters={filters}
+                workgroups={workgroups}
+                onFiltersChange={updateFilters}
+                onClearSearch={clearSearch}
+              />
+
+              {loading
+                ? viewMode === "table" ? <TableSkeleton rows={8} /> : <CardSkeleton count={8} />
+                : viewMode === "table"
+                  ? <SystemsTable systems={systems} isAdmin={isAdmin} onEdit={handleEdit} onDelete={handleDeleteClick} onTogglePin={handleTogglePin} onToggleStatus={handleToggleStatus} onAdd={handleAdd} />
+                  : <SystemsCardGrid systems={systems} isAdmin={isAdmin} onEdit={handleEdit} onDelete={handleDeleteClick} onTogglePin={handleTogglePin} onToggleStatus={handleToggleStatus} onAdd={handleAdd} />
+              }
+            </>
+          )}
+
+          {/* ── Workgroups Page ── */}
+          {activeMenu === "workgroups" && (
+            <WorkgroupsPage
+              workgroups={workgroups}
+              isAdmin={isAdmin}
+              adminToken={adminToken}
+              onRefresh={refetchWorkgroups}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          )}
+
+          {/* ── Stats Page ── */}
+          {activeMenu === "stats" && (
+            <StatsPage systems={systems} workgroups={workgroups} />
+          )}
+
         </div>
       </main>
+
+      {/* Modals */}
+      <AdminLoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onLogin={login}
+      />
+
+      <SystemModal
+        isOpen={modalOpen}
+        system={editingSystem}
+        workgroups={workgroups}
+        isLoading={saving}
+        onClose={() => !saving && setModalOpen(false)}
+        onSave={handleSave}
+      />
+
+      <ConfirmDialog
+        isOpen={!!deletingSystem}
+        title="ยืนยันการลบระบบ"
+        message={`คุณต้องการลบ "${deletingSystem?.system_name}" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`}
+        confirmLabel="ลบระบบ"
+        isLoading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => !deleting && setDeletingSystem(null)}
+      />
     </div>
   );
 }

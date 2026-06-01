@@ -1,0 +1,42 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "rhel-openssl-1.0.x", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Workgroup {
+  id          BigInt    @id @default(autoincrement())
+  group_name  String    @db.VarChar(255)
+  description String?   @db.Text
+  color_code  String?   @db.VarChar(20)
+  created_at  DateTime  @default(now())
+  systems     System[]
+
+  @@map("workgroups")
+}
+
+model System {
+  id           BigInt       @id @default(autoincrement())
+  system_name  String       @db.VarChar(255)
+  system_url   String?      @db.VarChar(500)
+  workgroup_id BigInt?
+  creator_name String?      @db.VarChar(255)
+  note         String?      @db.Text
+  is_pinned    Boolean      @default(false)
+  sort_order   Int          @default(0)
+  status       SystemStatus @default(active)
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  workgroup    Workgroup?   @relation(fields: [workgroup_id], references: [id], onDelete: SetNull)
+
+  @@map("systems")
+}
+
+enum SystemStatus {
+  active
+  inactive
+}
