@@ -301,7 +301,7 @@ export default function SystemModal({
                 ${form.is_pinned ? "bg-sky-500" : "bg-slate-200"}`}>
                 <FontAwesomeIcon icon={faThumbTack} className={`w-3.5 h-3.5 ${form.is_pinned ? "text-white" : "text-slate-500"}`} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className={`text-xs font-semibold ${form.is_pinned ? "text-sky-700" : "text-slate-700"}`}>
                   ปักหมุดรายการนี้
                 </p>
@@ -309,10 +309,14 @@ export default function SystemModal({
               </div>
               <button
                 type="button"
+                aria-pressed={form.is_pinned}
+                aria-label={form.is_pinned ? "ยกเลิกปักหมุดรายการนี้" : "ปักหมุดรายการนี้"}
                 onClick={(e) => { e.stopPropagation(); set("is_pinned", !form.is_pinned); }}
-                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${form.is_pinned ? "bg-sky-500" : "bg-slate-300"}`}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-200 focus:ring-offset-2 ${form.is_pinned ? "bg-sky-500" : "bg-slate-300"}`}
               >
-                <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${form.is_pinned ? "translate-x-5" : "translate-x-0.5"}`} />
+                <span
+                  className={`absolute left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${form.is_pinned ? "translate-x-5" : "translate-x-0"}`}
+                />
               </button>
             </div>
 
