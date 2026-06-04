@@ -44,7 +44,9 @@ export function useSystems(adminToken?: string | null) {
       params.set("sortField", f.sortField);
       params.set("sortOrder", f.sortOrder);
 
-      const res = await fetch(`/api/systems?${params.toString()}`);
+      const res = await fetch(`/api/systems?${params.toString()}`, {
+        headers: getAuthHeaders(),
+      });
       const json = await res.json();
       if (json.success) {
         setSystems(json.data.data.map(serializeSystem));
@@ -56,7 +58,7 @@ export function useSystems(adminToken?: string | null) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [adminToken]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

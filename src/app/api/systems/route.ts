@@ -11,6 +11,7 @@ import { Prisma } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
+    const isAdmin = isAdminRequest(req);
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") ?? "";
     const workgroup_id = searchParams.get("workgroup_id") ?? "";
@@ -25,8 +26,12 @@ export async function GET(req: NextRequest) {
       ...(search && {
         OR: [
           { system_name: { contains: search } },
-          { creator_name: { contains: search } },
-          { note: { contains: search } },
+          ...(isAdmin
+            ? [
+                { creator_name: { contains: search } },
+                { note: { contains: search } },
+              ]
+            : []),
         ],
       }),
       ...(workgroup_id && { workgroup_id: BigInt(workgroup_id) }),
@@ -45,7 +50,16 @@ export async function GET(req: NextRequest) {
       prisma.system.count({ where }),
     ]);
 
-    return successResponse({ data: systems, total });
+    return successResponse({
+      data: isAdmin
+        ? systems
+        : systems.map((system) => ({
+            ...system,
+            creator_name: null,
+            note: null,
+          })),
+      total,
+    });
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Unknown error";
     return errorResponse(`ไม่สามารถดึงข้อมูลระบบได้: ${detail}`);

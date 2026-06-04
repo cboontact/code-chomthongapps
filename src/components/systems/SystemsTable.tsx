@@ -77,12 +77,14 @@ export default function SystemsTable({ systems, isAdmin, onEdit, onDelete, onTog
                   กลุ่มงาน
                 </span>
               </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 hidden lg:table-cell">
-                <span className="flex items-center gap-1.5">
-                  <FontAwesomeIcon icon={faUserPen} className="w-3 h-3 text-slate-400" />
-                  ผู้สร้าง
-                </span>
-              </th>
+              {isAdmin && (
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 hidden lg:table-cell">
+                  <span className="flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faUserPen} className="w-3 h-3 text-slate-400" />
+                    ผู้สร้าง
+                  </span>
+                </th>
+              )}
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 hidden sm:table-cell">
                 <span className="flex items-center gap-1.5">
                   <FontAwesomeIcon icon={faToggleOn} className="w-3 h-3 text-slate-400" />
@@ -128,7 +130,7 @@ export default function SystemsTable({ systems, isAdmin, onEdit, onDelete, onTog
                         </a>
                       )}
                     </div>
-                    {sys.note && (
+                    {isAdmin && sys.note && (
                       <p className="text-xs text-slate-400 mt-0.5 line-clamp-1 max-w-xs">{sys.note}</p>
                     )}
                   </div>
@@ -140,9 +142,11 @@ export default function SystemsTable({ systems, isAdmin, onEdit, onDelete, onTog
                     <span className="text-slate-400 text-xs">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 hidden lg:table-cell">
-                  <span className="text-slate-600 text-xs">{sys.creator_name ?? "—"}</span>
-                </td>
+                {isAdmin && (
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    <span className="text-slate-600 text-xs">{sys.creator_name ?? "—"}</span>
+                  </td>
+                )}
                 <td className="px-4 py-3 hidden sm:table-cell">
                   <button
                     onClick={() => isAdmin && onToggleStatus(sys)}

@@ -83,10 +83,10 @@ export default function SystemCard({ system, isAdmin, onEdit, onDelete, onToggle
           )
         )}
 
-        {system.creator_name && (
+        {isAdmin && system.creator_name && (
           <p className="text-xs text-slate-400">ผู้สร้าง: {system.creator_name}</p>
         )}
-        {system.note && (
+        {isAdmin && system.note && (
           <p className="text-xs text-slate-400 mt-1 line-clamp-2">{system.note}</p>
         )}
       </div>

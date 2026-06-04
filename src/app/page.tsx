@@ -117,6 +117,7 @@ export default function HomePage() {
               <SearchBar
                 filters={filters}
                 workgroups={workgroups}
+                isAdmin={isAdmin}
                 onFiltersChange={updateFilters}
                 onClearSearch={clearSearch}
               />

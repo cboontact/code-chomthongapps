@@ -7,6 +7,7 @@ import type { SystemFilters, SortField, Workgroup } from "@/types";
 interface SearchBarProps {
   filters: SystemFilters;
   workgroups: Workgroup[];
+  isAdmin: boolean;
   onFiltersChange: (filters: Partial<SystemFilters>) => void;
   onClearSearch: () => void;
 }
@@ -18,7 +19,7 @@ const sortOptions: { value: SortField; label: string }[] = [
   { value: "status", label: "สถานะ" },
 ];
 
-export default function SearchBar({ filters, workgroups, onFiltersChange, onClearSearch }: SearchBarProps) {
+export default function SearchBar({ filters, workgroups, isAdmin, onFiltersChange, onClearSearch }: SearchBarProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:flex-wrap xl:flex-nowrap gap-2.5 mb-5 min-w-0">
       {/* Search input */}
@@ -29,7 +30,7 @@ export default function SearchBar({ filters, workgroups, onFiltersChange, onClea
         />
         <input
           type="text"
-          placeholder="ค้นหาชื่อระบบ, ผู้สร้าง, หมายเหตุ..."
+          placeholder={isAdmin ? "ค้นหาชื่อระบบ, ผู้สร้าง, หมายเหตุ..." : "ค้นหาชื่อระบบ..."}
           value={filters.search}
           onChange={(e) => onFiltersChange({ search: e.target.value })}
           className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 transition-all"
